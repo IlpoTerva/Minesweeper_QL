@@ -142,11 +142,10 @@ class Minesweeper:
             bot.train(screen)
             print("All episodes completed")
             print(f"Training stats, won: {bot.won}, lost {bot.lost}")
-            print("Testing Q-table")
+            print("Testing model")
             bot.test(screen)
             print(f"Testing stats, won {bot.won_test}, lost {bot.lost_test}")
-            bot.visualize_q_values()
-            print(bot.Q_table)
+            
         pygame.quit()
         sys.exit()
 

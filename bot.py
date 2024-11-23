@@ -26,10 +26,10 @@ class Minesweeper_Bot:
         self.num_episodes_test = 100
 
         
-        self.reward_lose = -50
+        self.reward_lose = -40
         self.reward_win = 100
-        self.basic_reward = 10
-        self.reward_cor_mine = 10
+        self.basic_reward = 25
+        self.reward_cor_mine = 15
 
         self.alpha = 0.1  # Learning rate
         self.gamma = 0.8 # Future reward discount factor
@@ -149,6 +149,19 @@ class Minesweeper_Bot:
             return True
         return False
     
+    def all_flags_correct(self):
+        flagged_cells = [
+            (x, y)
+            for y in range(len(self.game.tila["pelikentta"]))
+            for x in range(len(self.game.tila["pelikentta"][0]))
+            if self.game.tila["pelikentta"][y][x] == "f"
+        ]
+        for (x,y) in flagged_cells:
+            if not self.is_mine(x,y):
+                return False
+        return True
+
+
     def perform_action(self,x,y,action_idx):
         self.game.kasittele_hiiri(x,y,self.actions[action_idx])
     
@@ -174,8 +187,11 @@ class Minesweeper_Bot:
                     reward = self.reward_cor_mine
                 else:
                     reward = -10
-        if self.flag_count == 0 and not self.game.game_lost:
-            reward -= 5
+        if self.flag_count == 0:
+            if self.all_flags_correct:
+                reward += 20
+            else:
+                reward -= 5
         return reward
         
         
@@ -188,7 +204,10 @@ class Minesweeper_Bot:
     
     def update_q_table(self, state, action_idx, reward, new_state):
         """Update the Q-table based on the action taken and the new state."""
-
+        if state not in self.Q_table:
+            self.Q_table[state] = [0, 0]  # Initialize with zeros for two actions (open, flag)
+        if new_state not in self.Q_table:
+            self.Q_table[new_state] = [0, 0]
         best_next_action = np.argmax(self.Q_table[new_state])
         td_target = reward + self.gamma * self.Q_table[new_state][best_next_action]
         td_delta = td_target - self.Q_table[state][action_idx]
@@ -223,14 +242,14 @@ class Minesweeper_Bot:
         
 
     def select_action(self, state):
-        
+        if self.flag_count == 0:
+            if self.all_flags_correct:
+                return 0
         if np.random.uniform() < self.epsilon:
             action_index = random.choice([0, 1]) #Explore
-            #print("Random move")
+         
         else:
-            action_index = np.argmax(self.Q_table[state])  # Exploit
-        
-        
+            action_index = np.argmax(self.Q_table.get(state,[0,0]))  # Exploit
         return action_index
 
 
